@@ -2,7 +2,7 @@ import pandas as pd
 import scrapy
 import logging
 
-df = pd.read_csv(r'C:\Users\kukub\Documents\Coding\metacriticAnalysis\metacriticScraper\spiders\metacritic.csv')
+df = pd.read_csv('metacriticScraper\spiders\metacritic.csv')
 links = df['link'].values.tolist()
 logging.basicConfig(filename='mcScraper2.log', force=True, level=logging.DEBUG, format='%(asctime)s - %(message)s', datefmt='%d-%b-%y %H:%M:%S')
 count = 0
