@@ -2,6 +2,10 @@
 __pycache__/
 *.py[cod]
 *$py.class
+compareCSV.py
+convertJSONtoCSV.py
+mergeFiles.py
+scrapy.cfg
 
 # C extensions
 *.so

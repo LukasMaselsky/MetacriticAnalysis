@@ -1,27 +1,52 @@
 import pandas as pd
 import scrapy
 import logging
+import json
 
-df = pd.read_csv('metacriticScraper\spiders\metacritic.csv')
+df = pd.read_csv(r'MetacriticScraper\spiders\metacritic.csv')
 links = df['link'].values.tolist()
 logging.basicConfig(filename='mcScraper2.log', force=True, level=logging.DEBUG, format='%(asctime)s - %(message)s', datefmt='%d-%b-%y %H:%M:%S')
+
 count = 0
 
 class MetacriticSpider2(scrapy.Spider):
     name = 'mc2'
     allowed_domains = ['metacritic.com']
-    download_delay = 0.2
+    download_delay = 0.3
+    # needs to be in list format
     start_urls = links
     
     def parse(self, response):
         global count
-        # gets the 3 bits of info needed without stripping to prevent exception
+        # gets the bits of info needed without stripping to prevent exception
+
         name = response.css('h1::text').get()
+        name = name.strip() if name is not None else None
+
         platform = response.css('span.platform::text').get()
+        if name is not None: # if not 404
+            if platform.strip() == '':
+                platform = response.css('span.platform>a::text').get().strip()
+            else:
+                platform = platform.strip()
+        else:
+            platform = None
+
         numberofuserreviews = response.css('div.userscore_wrap.feature_userscore>div.summary>p>span.count>a::text').get()
-        numberofcriticreviews = response.css('div.score_summary.metascore_summary>div.metascore_wrap.highlight_metascore>div.summary>p>span.count>a>span::text').get()
+        numberofuserreviews = numberofuserreviews.strip() if numberofuserreviews is not None else None
         
-        # 5 scenarios 
+        numberofcriticreviews = response.css('div.score_summary.metascore_summary>div.metascore_wrap.highlight_metascore>div.summary>p>span.count>a>span::text').get()
+        numberofcriticreviews = numberofcriticreviews.strip() if numberofcriticreviews is not None else None
+
+        genres = response.css('div.details.side_details>ul.summary_details>li.summary_detail.product_genre>span.data::text').getall()
+        genres = ', '.join(genres)
+
+        rating = response.css('div.details.side_details>ul.summary_details>li.summary_detail.product_rating>span.data::text').get()
+        
+        developer = response.css('div.product_data>ul.summary_details>li.summary_detail.publisher>span.data>a::text').get()
+        developer = developer.strip() if developer is not None else None
+            
+        
         if name is None:
             # means page is 404
             yield {
@@ -29,89 +54,27 @@ class MetacriticSpider2(scrapy.Spider):
                 'platform': None, 
                 'numberofuserreviews': None,
                 'numberofcriticreviews': None,
+                'genres': None,
+                'rating': None,
+                'developer': None,
                 'url': response.request.url
             }
             count += 1
             logging.info('Count %s', count)
-        elif numberofuserreviews is None and numberofcriticreviews is None:
-            # both crit and user reviews are empty but not a 404
-            if platform.strip() == '':
-                yield {
-                    'name': name.strip(), 
-                    'platform': response.css('span.platform>a::text').get().strip(),
-                    'numberofuserreviews': None,
-                    'numberofcriticreviews': None
-                }
-                count += 1
-                logging.info('Count %s', count)
-            else:
-                yield {
-                    'name': name.strip(), 
-                    'platform': platform.strip(),
-                    'numberofuserreviews': None,
-                    'numberofcriticreviews': None
-                }
-                count += 1
-                logging.info('Count %s', count)
-        elif numberofuserreviews is None:
-            if platform.strip() == '':
-                yield {
-                    'name': name.strip(), 
-                    'platform': response.css('span.platform>a::text').get().strip(),
-                    'numberofuserreviews': None,
-                    'numberofcriticreviews': numberofcriticreviews.strip()
-                }
-                count += 1
-                logging.info('Count %s', count)
-            else:
-                yield {
-                    'name': name.strip(), 
-                    'platform': platform.strip(),
-                    'numberofuserreviews': None,
-                    'numberofcriticreviews': numberofcriticreviews.strip()
-                }
-                count += 1
-                logging.info('Count %s', count)
-        elif numberofcriticreviews is None:
-            if platform.strip() == '':   
-                yield {
-                    'name': name.strip(), 
-                    'platform': response.css('span.platform>a::text').get().strip(),
-                    'numberofuserreviews': numberofuserreviews.strip(),
-                    'numberofcriticreviews': None
-                }
-                count += 1
-                logging.info('Count %s', count)
-            else:
-                yield {
-                    'name': name.strip(), 
-                    'platform': platform.strip(),
-                    'numberofuserreviews': numberofuserreviews.strip(),
-                    'numberofcriticreviews': None
-                }
-                count += 1
-                logging.info('Count %s', count)
         else:
-            # everthing is fine, scrape all fields
-            if platform.strip() == '':
-                yield {
-                    'name': name.strip(),
-                    'platform': response.css('span.platform>a::text').get().strip(),
-                    'numberofuserreviews': numberofuserreviews.strip(),
-                    'numberofcriticreviews': numberofcriticreviews.strip()
-                }     
-                count += 1
-                logging.info('Count %s', count)
-            else:
-                yield {
-                    'name': name.strip(),
-                    'platform': platform.strip(),
-                    'numberofuserreviews': numberofuserreviews.strip(),
-                    'numberofcriticreviews': numberofcriticreviews.strip()
-                }     
-                count += 1
-                logging.info('Count %s', count)
+            yield {
+                'name': name,
+                'platform': platform, 
+                'numberofuserreviews': numberofuserreviews,
+                'numberofcriticreviews': numberofcriticreviews,
+                'genres': genres,
+                'rating': rating,
+                'developer': developer,
+            }
+            count += 1
+            logging.info('Count %s', count)
                 
+#!! cd into MetacriticAnalysis and then .\Scripts\activate to activate venv
 
 
 # Problem: skipping links
@@ -129,3 +92,5 @@ class MetacriticSpider2(scrapy.Spider):
 
 # Problem 5: platform text is sometimes inside a tag, sometimes not
 # Solution: add a couple if elses
+
+# After that, converted to csv and compared differences, those that got 404 added name manually and cleaned up names that didn't match, also added platforms to those that were none
