@@ -1,10 +1,11 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 import statistics
+from datetime import datetime
 
 df = pd.read_csv('mergedMetacritic.csv')
 df = df.dropna()
-df['date'] = pd.to_datetime(df['date'], format="%d/%m/%Y")
+df['date'] = pd.to_datetime(df['date'], format="%Y/%m/%d")
 df['year'] = pd.DatetimeIndex(df['date']).year
 
 # filter out 'ratings' string
@@ -47,10 +48,15 @@ final = []
 for list in overall:
     final.append(statistics.fmean(list))
 
+for i, year in enumerate(years):
+    years[i] = str(year)[-2:]
+# converts to 2 digits instead of 4 (looks better on graph)
 
 plt.plot(years, final)
-plt.title('Title')
-plt.xlabel('Years')
-plt.ylabel('Avg score')
+plt.xticks(years)
+plt.yticks([i for i in range(0, 101, 5)])
+plt.title('Average score of a video game each year')
+plt.xlabel('Years (1996-2023)')
+plt.ylabel('Average score')
 plt.show()
 
