@@ -5,8 +5,15 @@ from datetime import datetime
 
 df = pd.read_csv('mergedMetacritic.csv')
 df = df.dropna()
+
 df['date'] = pd.to_datetime(df['date'], format="%Y/%m/%d")
 df['year'] = pd.DatetimeIndex(df['date']).year
+
+print(df['year'].value_counts()) # shows 96-99 are outliers due to the low amount of games those years
+print(df['developer'].value_counts()) # most common developers
+print(df['rating'].value_counts())
+print(df['platform'].value_counts())
+print(df['genres'].str.split(',\s+', expand=True).stack().value_counts()) #* BUG??
 
 # filter out 'ratings' string
 df['numberofuserreviews'] = df['numberofuserreviews'].str.extract('(\d+)').astype(int)
@@ -59,4 +66,3 @@ plt.title('Average score of a video game each year')
 plt.xlabel('Years (1996-2023)')
 plt.ylabel('Average score')
 plt.show()
-
